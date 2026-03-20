@@ -1,30 +1,31 @@
 (function() {
-    // 1. The "Always True" overrides
-    const trueFn = { get: () => true, configurable: false };
-    const visibleFn = { get: () => 'visible', configurable: false };
-    const falseFn = { get: () => false, configurable: false };
-
-    // Force the browser to lie about window focus
-    Object.defineProperty(document, 'hasFocus', { value: () => true, writable: false });
-    Object.defineProperty(window, 'onblur', { value: null, writable: false });
+    window._epDebug = false; // Default: Silent
     
-    // Mask visibility even if you switch tabs
-    Object.defineProperty(document, 'visibilityState', visibleFn);
-    Object.defineProperty(document, 'webkitVisibilityState', visibleFn);
-    Object.defineProperty(document, 'hidden', falseFn);
-    Object.defineProperty(document, 'webkitHidden', falseFn);
+    const log = (m) => { if(window._epDebug) console.log(`%c[EP-DEBUG] %c${m}`, 'color:cyan;font-weight:bold', 'color:white'); };
+    const v = { get: () => 'visible', configurable: false }, f = { get: () => false, configurable: false }, t = { value: () => true, writable: false };
 
-    // 2. The "Passive Listener" - doesn't block, just ignores
-    window.addEventListener('blur', (e) => {
+    // Overwrite browser properties
+    Object.defineProperty(document, 'visibilityState', v);
+    Object.defineProperty(document, 'webkitVisibilityState', v);
+    Object.defineProperty(document, 'hidden', f);
+    Object.defineProperty(document, 'webkitHidden', f);
+    Object.defineProperty(document, 'hasFocus', t);
+
+    // Block signals
+    const block = (e) => {
         e.stopImmediatePropagation();
-        console.log("Ignored a blur event.");
-    }, true);
+        log(`Intercepted: ${e.type}`);
+    };
+    ['blur', 'mouseleave', 'visibilitychange', 'webkitvisibilitychange', 'pagehide', 'focusout'].forEach(evt => {
+        window.addEventListener(evt, block, true);
+        document.addEventListener(evt, block, true);
+    });
 
-    // 3. Keep the "heartbeat" alive without moving the mouse
-    // This tells the site you're still there without being "sus"
-    setInterval(() => {
-        window.dispatchEvent(new Event('focus'));
-    }, 5000);
+    // Heartbeat
+    setInterval(() => window.dispatchEvent(new Event('focus')), 2000);
 
-    console.log("Ghost Mode Active. The site thinks you're always here.");
+    // Command to enable debug mode manually
+    window.debug = () => { window._epDebug = !window._epDebug; console.log(`Debug Mode: ${window._epDebug}`); };
+
+    console.log("Ghost Mode Loaded. Type 'debug()' to see blocks.");
 })();
