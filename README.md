@@ -9,3 +9,5 @@ This is a peice of code, used in the console or as a bookmarklet, that will tric
 1. go to [bookmarklet](bookmarklet.js) and copy it
 2. create a new book mark and paste the code in in the url page
 3. click on the bookmark to activate
+## Debugging
+if you type `debug()` in the console it will debug all things blocked
